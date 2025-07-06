@@ -1,0 +1,12 @@
+megs: 128
+log: bochs.log
+
+romimage: file=/usr/share/bochs/BIOS-bochs-latest, address=0xe0000
+vgaromimage: file=/usr/share/bochs/VGABIOS-lgpl-latest.bin
+
+floppya: 1_44=/home/cory/osdev/build/main_floppy.img, status=inserted
+
+boot: floppy
+
+mouse: enabled=0
+display_library: sdl2
