@@ -10,3 +10,5 @@ boot: floppy
 
 mouse: enabled=0
 display_library: sdl2
+debugger_log: gui
+magic_break: enabled=1
