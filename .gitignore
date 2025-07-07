@@ -1,0 +1,11 @@
+# Ignore build output folders
+build/
+OS-Build/build/
+OS-Build/osdev/build/
+
+# Ignore log files
+bochs.log
+
+# Ignore any editor/OS files you want to exclude (optional)
+*.swp
+*.DS_Store
