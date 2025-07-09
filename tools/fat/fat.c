@@ -1,14 +1,15 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
-typedef uint8_t  bool;
+typedef uint8_t bool;
 #define true 1
 #define false 0
 
-
-typedef struct
-{
-    uint8_t  jmp_instruction[3];    
+// FAT Boot Sector Structure
+typedef struct {
+    uint8_t  jmp_instruction[3];
     uint8_t  oem_name[8];
     uint16_t bytes_per_sector;
     uint8_t  sectors_per_cluster;
@@ -30,49 +31,114 @@ typedef struct
     uint8_t  system_id[8];
 } __attribute__((packed)) BootSector;
 
+typedef struct {
+    uint8_t  Name[11];  // 8.3 filename format (padded with spaces)
+    uint8_t  Attributes;
+    uint8_t  _Reserved;
+    uint8_t  CreatedTimeTenths;
+    uint16_t CreatedTime;
+    uint16_t CreatedDate;
+    uint16_t AccessedDate;
+    uint16_t FirstClusterHigh;
+    uint16_t ModifiedTime;
+    uint16_t ModifiedDate;
+    uint16_t FirstClusterLow;
+    uint32_t Size;
+} __attribute__((packed)) DirectoryEntry;
+
 BootSector g_BootSector;
-bool readBootSector(FILE* disk, BootSector* boot)
-{
-    return fread(boot, sizeof(BootSector), 1, disk) > 0;
+uint8_t *g_Fat = NULL;
+DirectoryEntry *g_RootDirectory = NULL;
+
+bool readBootSector(FILE *disk) {
+    return fread(&g_BootSector, sizeof(g_BootSector), 1, disk) > 0;
 }
-bool readSectors(FILE* disk, uint32_t sector, uint8_t* buffer, size_t count)
-{
-    if (fseek(disk, sector * g_BootSector.bytes_per_sector, SEEK_SET) != 0) {
-        return false;
+
+// Read one or more sectors from disk image into bufferOut
+bool readSectors(FILE *disk, uint32_t lba, uint32_t count, void *bufferOut) {
+    bool ok = true;
+    ok = ok && (fseek(disk, lba * g_BootSector.bytes_per_sector, SEEK_SET) == 0);
+    ok = ok && (fread(bufferOut, g_BootSector.bytes_per_sector, count, disk) == count);
+    return ok;
+}
+
+bool readFat(FILE *disk) {
+    g_Fat = (uint8_t *) malloc(g_BootSector.sectors_per_fat * g_BootSector.bytes_per_sector);
+    if (!g_Fat) return false;
+    return readSectors(disk, g_BootSector.reserved_sectors, g_BootSector.sectors_per_fat, g_Fat);
+}
+
+bool readRootDirectory(FILE *disk) {
+    uint32_t fat_size = g_BootSector.sectors_per_fat * g_BootSector.fat_count;
+    uint32_t lba = g_BootSector.reserved_sectors + fat_size;
+
+    uint32_t size = sizeof(DirectoryEntry) * g_BootSector.dir_entry_count;
+    uint32_t sectors = size / g_BootSector.bytes_per_sector;
+    if (size % g_BootSector.bytes_per_sector)
+        sectors++;  // Round up to cover entire directory
+
+    g_RootDirectory = (DirectoryEntry *) malloc(sectors * g_BootSector.bytes_per_sector);
+    if (!g_RootDirectory) return false;
+
+    return readSectors(disk, lba, sectors, g_RootDirectory);
+}
+
+// Find file in root directory by 11-character 8.3 format name
+DirectoryEntry *findFile(const char *name) {
+    for (uint32_t i = 0; i < g_BootSector.dir_entry_count; i++) {
+        if (memcmp(name, g_RootDirectory[i].Name, 11) == 0) {
+            return &g_RootDirectory[i];
+        }
     }
-    return fread(buffer, g_BootSector.bytes_per_sector, count, disk) == count;
+    return NULL;
 }
-int addFileToFAT32(const char* imagePath, const char* filePath)
-{
+
+int main(int argc, char **argv) {
     if (argc < 3) {
-        printf("Usage: %s <fat32 image> <file to add>\n", argv[0]);
+        printf("Syntax: %s <disk image> <file name>\n", argv[0]);
         return -1;
     }
 
-    FILE* disk = fopen(argv[1], "rb");
+    FILE *disk = fopen(argv[1], "rb");
     if (!disk) {
-        printf("Error opening disk image: %s\n", argv[1]);
+        fprintf(stderr, "Error: Could not open disk image %s\n", argv[1]);
         return -1;
     }
 
-    if (!readBootSector(disk, &g_BootSector)) {
-        printf("Error reading boot sector\n");
+    if (!readBootSector(disk)) {
+        fprintf(stderr, "Error: Could not read boot sector from disk image!\n");
         fclose(disk);
         return -2;
     }
 
-    fclose(disk);
-    return 0;
-}
-
-int main(int argc, char** argv)
-{
-    if (argc < 3){
-        printf("Usage: %s <fat32 image> <file to add>\n", argv[0]);
-        return -1;
+    if (!readFat(disk)) {
+        fprintf(stderr, "Error: Could not read FAT!\n");
+        fclose(disk);
+        free(g_Fat);
+        return -3;
     }
 
-    FILE* disk = fopen(argv[1], "rb");
+    if (!readRootDirectory(disk)) {
+        fprintf(stderr, "Error: Could not read root directory!\n");
+        fclose(disk);
+        free(g_Fat);
+        free(g_RootDirectory);
+        return -4;
+    }
 
+    DirectoryEntry *fileEntry = findFile(argv[2]);
+    if (!fileEntry) {
+        fprintf(stderr, "Could not find file %s!\n", argv[2]);
+        fclose(disk);
+        free(g_Fat);
+        free(g_RootDirectory);
+        return -5;
+    }
+
+    printf("Found file: %.11s, Size: %u bytes\n", fileEntry->Name, fileEntry->Size);
+
+    fclose(disk);
+    free(g_Fat);
+    free(g_RootDirectory);
     return 0;
 }
