@@ -11,7 +11,7 @@ This project walks through bootloader development, kernel implementation in Asse
 > Before running any commands, navigate there:
 >
 > ```bash
-> cd D:\OS-Build
+> cd \OS-Build
 > ```
 
 ---
@@ -98,7 +98,7 @@ sudo apt install nasm bochs qemu make gcc
 
 ## Usage
 
-All commands assume you’re in `D:\OS-Build`.
+All commands assume you’re in `\OS-Build`.
 
 ### Build the OS
 ```bash
@@ -164,7 +164,7 @@ Removes binaries, floppy images, and temporary build files.
 | Issue | Possible Fix |
 |-------|---------------|
 | **Bochs fails to start** | Verify `bochs` installation and `bochs_config` settings |
-| **File not found** | Ensure you’re in `D:\OS-Build` before running scripts |
+| **File not found** | Ensure you’re in `\OS-Build` before running scripts |
 | **Kernel crashes/loops** | Use `debug.sh` and check `osdev/build/main.bin` |
 | **Permissions errors** | Make scripts executable:<br>`chmod +x run.sh debug.sh` |
 
