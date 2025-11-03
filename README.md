@@ -4,8 +4,8 @@
 ![C](https://img.shields.io/badge/language-C-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-A step-by-step guide to building a simple operating system from scratch — inspired by [nanobyte’s tutorial series](https://www.youtube.com/playlist?list=PLFjM7v6KGMpiH2G-kT781ByCNC_0pKpPN).  
-This project walks through bootloader development, kernel implementation in Assembly, FAT filesystem utilities in C, and testing in emulators.
+Building a simple operating system from scratch — inspired by [nanobyte’s tutorial series](https://www.youtube.com/playlist?list=PLFjM7v6KGMpiH2G-kT781ByCNC_0pKpPN).  
+This project is my attempt of bootloader development, kernel implementation in Assembly, FAT filesystem utilities in C, and testing in emulators.
 
 > **⚠️ Important:** All files are located inside the `\OS-Build` directory.  
 > Before running any commands, navigate there:
