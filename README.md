@@ -46,14 +46,14 @@ make clean
 
 ```
 OS-Build
-│   .gitignore          # Git ignore rules
+│   .gitignore          
 │   bochs_config        # Bochs emulator configuration
-│   debug.sh            # Debugging helper script
-│   LICENSE             # Project license
+│   debug.sh            
+│   LICENSE             
 │   Makefile            # Top-level build script
 │   README.md           # This file
 │   run.sh              # Run OS in emulator
-│   test.txt            # Temporary test file
+│   test.txt            
 │
 ├───osdev
 │   │   Makefile        # Build script for OS components
